@@ -1,6 +1,11 @@
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, EmailStr
+from typing import Optional
+
+from database import create_document
+from schemas import ContactMessage
 
 app = FastAPI()
 
@@ -63,6 +68,15 @@ def test_database():
     response["database_name"] = "✅ Set" if os.getenv("DATABASE_NAME") else "❌ Not Set"
     
     return response
+
+@app.post("/contact")
+def submit_contact(message: ContactMessage):
+    """Store contact messages in the database for follow-up."""
+    try:
+        doc_id = create_document("contactmessage", message)
+        return {"status": "ok", "id": doc_id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 if __name__ == "__main__":
